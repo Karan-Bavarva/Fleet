@@ -17,4 +17,5 @@ Route::middleware(['auth', 'admin'])->group(function () {
     })->name('admin.dashboard');
 });
 
+Route::get('test', 'TestController@test')->name('test');
 // require __DIR__.'/auth.php';
