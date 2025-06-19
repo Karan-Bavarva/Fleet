@@ -2,9 +2,9 @@ name: Laravel CI
 
 on:
   push:
-    branches: [main, kp/test]
+    branches: [main]
   pull_request:
-    branches: [main, kp/test]
+    branches: [main]
 
 jobs:
   laravel-tests:
@@ -15,7 +15,7 @@ jobs:
         image: mysql:8.0
         env:
           MYSQL_ROOT_PASSWORD: root
-          MYSQL_DATABASE: laravel
+          MYSQL_DATABASE: test_db
         ports:
           - 3306:3306
         options: >-
@@ -25,28 +25,32 @@ jobs:
           --health-retries=3
 
     steps:
-      - uses: actions/checkout@v3
+      - name: Checkout code
+        uses: actions/checkout@v3
 
       - name: Set up PHP
         uses: shivammathur/setup-php@v2
         with:
-          php-version: 8.2
-          extensions: mbstring, pdo, bcmath, xml
-          coverage: none
-
-      - name: Print current branch
-        run: echo "Running on branch ${{ github.ref_name }}"
+          php-version: '8.2'
+          extensions: mbstring, bcmath, pdo_mysql
 
       - name: Install Composer dependencies
         run: composer install --no-progress --prefer-dist --optimize-autoloader
 
-      - name: Copy .env file
+      - name: Copy .env.testing to .env
         run: cp .env.testing .env
 
       - name: Generate app key
         run: php artisan key:generate
 
       - name: Run migrations
+        env:
+          DB_CONNECTION: mysql
+          DB_HOST: 127.0.0.1
+          DB_PORT: 3306
+          DB_DATABASE: test_db
+          DB_USERNAME: root
+          DB_PASSWORD: root
         run: php artisan migrate --force
 
       - name: Run tests
