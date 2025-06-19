@@ -24,36 +24,35 @@ jobs:
           --health-retries=3
 
     steps:
-      - name: Checkout code
+      - name: 🧾 Checkout code
         uses: actions/checkout@v3
 
-      - name: Set up PHP
+      - name: ⚙️ Set up PHP
         uses: shivammathur/setup-php@v2
         with:
           php-version: '8.2'
           extensions: mbstring, bcmath, xml, ctype, fileinfo, json, pdo_mysql
+          coverage: none
 
-      - name: Install Composer dependencies
+      - name: 📦 Install Composer dependencies
         run: composer install --prefer-dist --no-progress --no-suggest
 
-      - name: Set up .env file
+      - name: 🗂 Set up .env file (MySQL)
         run: |
-          cat <<EOF > .env
-          APP_NAME="Laravel CI"
-          APP_ENV=local
-          APP_KEY=
-          APP_DEBUG=true
-          APP_URL=http://localhost
-          LOG_CHANNEL=stack
-          DB_CONNECTION=mysql
-          DB_HOST=127.0.0.1
-          DB_PORT=3306
-          DB_DATABASE=laravel
-          DB_USERNAME=root
-          DB_PASSWORD=root
-          EOF
+          echo "APP_NAME=\"Laravel CI\"" > .env
+          echo "APP_ENV=local" >> .env
+          echo "APP_KEY=" >> .env
+          echo "APP_DEBUG=true" >> .env
+          echo "APP_URL=http://localhost" >> .env
+          echo "LOG_CHANNEL=stack" >> .env
+          echo "DB_CONNECTION=mysql" >> .env
+          echo "DB_HOST=127.0.0.1" >> .env
+          echo "DB_PORT=3306" >> .env
+          echo "DB_DATABASE=laravel" >> .env
+          echo "DB_USERNAME=root" >> .env
+          echo "DB_PASSWORD=root" >> .env
 
-      - name: Wait for MySQL to be ready
+      - name: 🐘 Wait for MySQL to be ready
         run: |
           sudo apt-get install -y mysql-client
           until mysql -h 127.0.0.1 -u root -proot -e "SELECT 1"; do
@@ -61,11 +60,11 @@ jobs:
             sleep 2
           done
 
-      - name: Generate app key
+      - name: 🔑 Generate app key
         run: php artisan key:generate
 
-      - name: Run migrations
+      - name: 📋 Run migrations
         run: php artisan migrate --force
 
-      - name: Run tests
+      - name: ✅ Run Laravel tests
         run: php artisan test
