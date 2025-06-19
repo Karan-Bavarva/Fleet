@@ -4,6 +4,7 @@ on:
   push:
     branches: [main]
   pull_request:
+    branches: [main]
 
 jobs:
   laravel-tests:
@@ -12,11 +13,11 @@ jobs:
     services:
       mysql:
         image: mysql:8.0
-        ports:
-          - 3306:3306
         env:
           MYSQL_ROOT_PASSWORD: root
-          MYSQL_DATABASE: laravel
+          MYSQL_DATABASE: test_db
+        ports:
+          - 3306:3306
         options: >-
           --health-cmd="mysqladmin ping --silent"
           --health-interval=10s
@@ -24,52 +25,32 @@ jobs:
           --health-retries=3
 
     steps:
-      - name: 🧾 Checkout code
-        uses: actions/checkout@v3
+      - uses: actions/checkout@v3
 
-      - name: ⚙️ Set up PHP
+      - name: Set up PHP
         uses: shivammathur/setup-php@v2
         with:
           php-version: '8.2'
-          extensions: mbstring, bcmath, xml, ctype, fileinfo, json, pdo_mysql
+          extensions: mbstring, bcmath, pdo_mysql
 
-      - name: 📦 Install Composer dependencies
-        run: composer install --prefer-dist --no-progress --no-suggest
+      - name: Install Composer dependencies
+        run: composer install --no-progress --prefer-dist --optimize-autoloader
 
-      - name: 🧼 Remove old .env (if any)
-        run: rm -f .env
+      - name: Copy .env.testing to .env
+        run: cp .env.testing .env
 
-      - name: 🗂 Create fresh .env file
-        run: |
-          echo 'APP_NAME="Laravel CI"' > .env
-          echo 'APP_ENV=local' >> .env
-          echo 'APP_KEY=' >> .env
-          echo 'APP_DEBUG=true' >> .env
-          echo 'APP_URL=http://localhost' >> .env
-          echo 'LOG_CHANNEL=stack' >> .env
-          echo 'DB_CONNECTION=mysql' >> .env
-          echo 'DB_HOST=127.0.0.1' >> .env
-          echo 'DB_PORT=3306' >> .env
-          echo 'DB_DATABASE=laravel' >> .env
-          echo 'DB_USERNAME=root' >> .env
-          echo 'DB_PASSWORD=root' >> .env
-
-      - name: 🔍 Show .env content for debugging
-        run: cat .env
-
-      - name: 🐘 Wait for MySQL to be ready
-        run: |
-          sudo apt-get install -y mysql-client
-          until mysql -h 127.0.0.1 -u root -proot -e "SELECT 1"; do
-            echo "Waiting for MySQL..."
-            sleep 2
-          done
-
-      - name: 🔑 Generate Laravel app key
+      - name: Generate app key
         run: php artisan key:generate
 
-      - name: 🧪 Run Laravel migrations
+      - name: Run migrations
+        env:
+          DB_CONNECTION: mysql
+          DB_HOST: 127.0.0.1
+          DB_PORT: 3306
+          DB_DATABASE: test_db
+          DB_USERNAME: root
+          DB_PASSWORD: root
         run: php artisan migrate --force
 
-      - name: ✅ Run Laravel tests
+      - name: Run tests
         run: php artisan test
